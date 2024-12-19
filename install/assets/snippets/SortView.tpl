@@ -2,58 +2,74 @@
 /**
  * SortView
  *
- * Sort and change views of catalogues items 
- * 
+ * Sort and change views of catalogues items with flexible layout system
+ *
+ * @author    Nicola Lambathakis http://www.tattoocms.it/
  * @category    snippet
- * @version     1.3
+ * @version     2.0
  * @internal    @modx_category Content
  * @license     http://www.gnu.org/copyleft/gpl.html GNU Public License (GPL)
+ * @lastupdate  19-12-2024
  */
-
-if (!defined('MODX_BASE_PATH')) { die('What are you doing? Get out of here!'); }
-
+if (!defined('MODX_BASE_PATH')) {
+    die('What are you doing? Get out of here!');
+}
 // Get snippet parameters
 $param = $modx->event->params;
-
 // Core parameters
-$tplGrid = isset($param['tplGrid']) ? $param['tplGrid'] : 'BS4-DL-BOX-SHOP-tpl';
-$tplList = isset($param['tplList']) ? $param['tplList'] : 'BS4-DL-ROWS-tpl';
+function parseTpl($tpl, $default = '') {
+    if (empty($tpl)) return $default;
+    if (substr($tpl, 0, 6) === '@CODE:') {
+        return substr($tpl, 6);
+    } elseif (substr($tpl, 0, 7) === '@CHUNK:') {
+        return substr($tpl, 7); // Ritorna solo il nome del chunk
+        
+    } else {
+        return $tpl; // Ritorna il nome del chunk
+        
+    }
+}
+// Template delle view - passa solo il riferimento
+$tplGrid = isset($param['tplGrid']) ? parseTpl($param['tplGrid'], '@CODE:Missing Grid tpl!') : '@CODE:Missing Grid tpl!';
+$tplList = isset($param['tplList']) ? parseTpl($param['tplList'], '@CODE:Missing List tpl!') : '@CODE:Missing List tpl!';
+// Template generale - questo deve essere elaborato subito
+function parseLayoutTpl($tpl, $default = '') {
+    if (empty($tpl)) return $default;
+    if (substr($tpl, 0, 6) === '@CODE:') {
+        return substr($tpl, 6);
+    } elseif (substr($tpl, 0, 7) === '@CHUNK:') {
+        $chunk = substr($tpl, 7);
+        return $GLOBALS['modx']->getChunk($chunk);
+    } else {
+        return $GLOBALS['modx']->getChunk($tpl);
+    }
+}
 $defaultSort = isset($param['defaultSort']) ? $param['defaultSort'] : 'menuindex';
 $defaultOrder = isset($param['defaultOrder']) ? $param['defaultOrder'] : 'ASC';
 $defaultView = isset($param['defaultView']) ? $param['defaultView'] : 'grid';
 $defaultDisplay = isset($param['defaultDisplay']) ? $param['defaultDisplay'] : '10';
+// Template and display modes
+$template = isset($param['template']) ? $param['template'] : '';
 $viewMode = isset($param['viewMode']) ? strtolower($param['viewMode']) : 'select';
-
-// SortOrder
 $sortOrderMode = isset($param['sortOrderMode']) ? strtolower($param['sortOrderMode']) : 'select';
-$sortOrderBtnClass = isset($param['sortOrderBtnClass']) ? $param['sortOrderBtnClass'] : 'btn btn-outline-secondary btn-sm';
-$sortOrderBtnActiveClass = isset($param['sortOrderBtnActiveClass']) ? $param['sortOrderBtnActiveClass'] : 'active';
-$sortOrderBtnGroupClass = isset($param['sortOrderBtnGroupClass']) ? $param['sortOrderBtnGroupClass'] : 'btn-group';
-$ascLabel = isset($param['ascLabel']) ? $param['ascLabel'] : '<i class="fa fa-sort-amount-asc"></i>';
-$descLabel = isset($param['descLabel']) ? $param['descLabel'] : '<i class="fa fa-sort-amount-desc"></i>';
-
+// Show/Hide components
+$showSortBy = isset($param['showSortBy']) ? (bool)$param['showSortBy'] : true;
+$showSortOrder = isset($param['showSortOrder']) ? (bool)$param['showSortOrder'] : true;
+$showView = isset($param['showView']) ? (bool)$param['showView'] : true;
+$showDisplay = isset($param['showDisplay']) ? (bool)$param['showDisplay'] : true;
 // Labels
 $gridLabel = isset($param['gridLabel']) ? $param['gridLabel'] : 'Grid';
 $listLabel = isset($param['listLabel']) ? $param['listLabel'] : 'List';
 $DESCLabel = isset($param['DESCLabel']) ? $param['DESCLabel'] : 'Descending';
 $ASCLabel = isset($param['ASCLabel']) ? $param['ASCLabel'] : 'Ascending';
 $displayLabel = isset($param['displayLabel']) ? $param['displayLabel'] : 'Mostra:';
-
 // CSS Classes
-$sortBySelClass = isset($param['sortBySelClass']) ? $param['sortBySelClass'] : 'form-control form-control-sm';
-$sortOrderSelClass = isset($param['sortOrderSelClass']) ? $param['sortOrderSelClass'] : 'form-control form-control-sm';
-$viewSelClass = isset($param['viewSelClass']) ? $param['viewSelClass'] : 'form-control form-control-sm';
-$displaySelClass = isset($param['displaySelClass']) ? $param['displaySelClass'] : 'form-control form-control-sm';
-$viewBtnClass = isset($param['viewBtnClass']) ? $param['viewBtnClass'] : 'btn btn-outline-secondary btn-sm';
-$viewBtnActiveClass = isset($param['viewBtnActiveClass']) ? $param['viewBtnActiveClass'] : 'active';
-$viewBtnGroupClass = isset($param['viewBtnGroupClass']) ? $param['viewBtnGroupClass'] : 'btn-group';
-
-// Container Classes
-$sortByOutClass = isset($param['sortByOutClass']) ? $param['sortByOutClass'] : 'form-group mr-2';
-$sortOrderOutClass = isset($param['sortOrderOutClass']) ? $param['sortOrderOutClass'] : 'form-group mr-2';
-$viewOutClass = isset($param['viewOutClass']) ? $param['viewOutClass'] : 'form-group mr-2';
-$displayOutClass = isset($param['displayOutClass']) ? $param['displayOutClass'] : 'form-group';
-
+$formClass = isset($param['formClass']) ? $param['formClass'] : 'form-inline justify-content-end';
+$selectClass = isset($param['selectClass']) ? $param['selectClass'] : 'form-control form-control-sm';
+$btnClass = isset($param['btnClass']) ? $param['btnClass'] : 'btn btn-outline-secondary btn-sm';
+$btnActiveClass = isset($param['btnActiveClass']) ? $param['btnActiveClass'] : 'active';
+$btnGroupClass = isset($param['btnGroupClass']) ? $param['btnGroupClass'] : 'btn-group';
+$blockClass = isset($param['blockClass']) ? $param['blockClass'] : 'form-group mr-2';
 // Process form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'sortview') {
     $_SESSION['sortview_sort'] = isset($_POST['sort']) ? $_POST['sort'] : $defaultSort;
@@ -61,123 +77,130 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $_SESSION['sortview_view'] = isset($_POST['view']) ? $_POST['view'] : $defaultView;
     $_SESSION['sortview_display'] = isset($_POST['display']) ? $_POST['display'] : $defaultDisplay;
 }
-
 // Get current values
 $sortBy = isset($_SESSION['sortview_sort']) ? $_SESSION['sortview_sort'] : $defaultSort;
 $sortOrder = isset($_SESSION['sortview_order']) ? $_SESSION['sortview_order'] : $defaultOrder;
 $viewType = isset($_SESSION['sortview_view']) ? $_SESSION['sortview_view'] : $defaultView;
 $display = isset($_SESSION['sortview_display']) ? $_SESSION['sortview_display'] : $defaultDisplay;
-
 // Sort options
 $sortOptions = isset($param['sortOptions']) ? $param['sortOptions'] : 'pagetitle,menuindex,price';
 $sortOptionsLabels = isset($param['sortOptionsLabels']) ? $param['sortOptionsLabels'] : '';
 $sortFields = array_map('trim', explode(',', $sortOptions));
 $sortLabelsArray = !empty($sortOptionsLabels) ? array_map('trim', explode(',', $sortOptionsLabels)) : array();
-
-// Build sort options HTML
-$sortOptionsHtml = '';
-foreach ($sortFields as $index => $field) {
-    $label = isset($sortLabelsArray[$index]) ? $sortLabelsArray[$index] : ucfirst($field);
-    $selected = $sortBy === $field ? ' selected="selected"' : '';
-    $sortOptionsHtml .= sprintf('<option value="%s"%s>%s</option>', $field, $selected, $label);
+// Generate form elements
+$ph = array(); // Placeholder array
+// Form tags
+$ph['sv_form_start'] = '<form method="POST" action="' . $_SERVER['REQUEST_URI'] . '" id="sortviewForm" class="' . $formClass . '">
+    <input type="hidden" name="action" value="sortview">
+    <input type="hidden" name="sort" value="' . $sortBy . '">
+    <input type="hidden" name="order" value="' . $sortOrder . '">
+    <input type="hidden" name="view" value="' . $viewType . '">
+    <input type="hidden" name="display" value="' . $display . '">';
+$ph['sv_form_end'] = '</form>';
+// SortBy block
+if ($showSortBy) {
+    $sortOptionsHtml = '';
+    foreach ($sortFields as $index => $field) {
+        $label = isset($sortLabelsArray[$index]) ? $sortLabelsArray[$index] : ucfirst($field);
+        $selected = $sortBy === $field ? ' selected="selected"' : '';
+        $sortOptionsHtml.= '<option value="' . $field . '"' . $selected . '>' . $label . '</option>';
+    }
+    $ph['sv_sortby_select'] = '<select name="sort" class="' . $selectClass . '">' . $sortOptionsHtml . '</select>';
+    $ph['sv_sortby_block'] = '<div class="' . $blockClass . '">' . $ph['sv_sortby_select'] . '</div>';
 }
-
-// Display options
-$displayOptions = isset($param['displayOptions']) ? $param['displayOptions'] : '5||10||20||30||40||all==tutti';
-$displayOptionsHtml = '';
-foreach (explode('||', $displayOptions) as $option) {
-    $parts = explode('==', $option);
-    $value = $parts[0];
-    $label = isset($parts[1]) ? $parts[1] : $value;
-    $selected = $display === $value ? ' selected="selected"' : '';
-    $displayOptionsHtml .= sprintf('<option value="%s"%s>%s</option>', $value, $selected, $label);
+// SortOrder block
+if ($showSortOrder) {
+    if ($sortOrderMode === 'buttons') {
+        $ph['sv_btn_asc'] = '<button type="submit" name="order" value="ASC" class="' . $btnClass . ($sortOrder === 'ASC' ? ' ' . $btnActiveClass : '') . '">' . $ASCLabel . '</button>';
+        $ph['sv_btn_desc'] = '<button type="submit" name="order" value="DESC" class="' . $btnClass . ($sortOrder === 'DESC' ? ' ' . $btnActiveClass : '') . '">' . $DESCLabel . '</button>';
+        $ph['sv_sortorder_block'] = '<div class="' . $blockClass . '"><div class="' . $btnGroupClass . '">' . $ph['sv_btn_asc'] . $ph['sv_btn_desc'] . '</div></div>';
+    } else {
+        $ph['sv_sortorder_select'] = '<select name="order" class="' . $selectClass . '">
+            <option value="ASC"' . ($sortOrder === 'ASC' ? ' selected="selected"' : '') . '>' . $ASCLabel . '</option>
+            <option value="DESC"' . ($sortOrder === 'DESC' ? ' selected="selected"' : '') . '>' . $DESCLabel . '</option>
+        </select>';
+        $ph['sv_sortorder_block'] = '<div class="' . $blockClass . '">' . $ph['sv_sortorder_select'] . '</div>';
+    }
 }
-
-// Prepare view selector
-if ($viewMode === 'buttons') {
-    // Non usiamo sprintf per evitare problemi con l'HTML nelle label
-    $viewSelector = '
-        <div class="'.$viewBtnGroupClass.'">
-            <button type="submit" name="view" value="grid" class="'.$viewBtnClass.($viewType === 'grid' ? ' '.$viewBtnActiveClass : '').'">'
-                .$gridLabel.
-            '</button>
-            <button type="submit" name="view" value="list" class="'.$viewBtnClass.($viewType === 'list' ? ' '.$viewBtnActiveClass : '').'">'
-                .$listLabel.
-            '</button>
-        </div>';
-} else {
-    // Per il select dobbiamo comunque codificare per sicurezza
-    $viewSelector = sprintf('
-        <select name="view" class="%s">
-            <option value="grid"%s>%s</option>
-            <option value="list"%s>%s</option>
-        </select>',
-        $viewSelClass,
-        ($viewType === 'grid' ? ' selected="selected"' : ''), htmlspecialchars($gridLabel),
-        ($viewType === 'list' ? ' selected="selected"' : ''), htmlspecialchars($listLabel)
-    );
+// View block
+if ($showView) {
+    if ($viewMode === 'buttons') {
+        $ph['sv_btn_grid'] = '<button type="submit" name="view" value="grid" class="' . $btnClass . ($viewType === 'grid' ? ' ' . $btnActiveClass : '') . '">' . $gridLabel . '</button>';
+        $ph['sv_btn_list'] = '<button type="submit" name="view" value="list" class="' . $btnClass . ($viewType === 'list' ? ' ' . $btnActiveClass : '') . '">' . $listLabel . '</button>';
+        $ph['sv_view_block'] = '<div class="' . $blockClass . '"><div class="' . $btnGroupClass . '">' . $ph['sv_btn_grid'] . $ph['sv_btn_list'] . '</div></div>';
+    } else {
+        $ph['sv_view_select'] = '<select name="view" class="' . $selectClass . '">
+            <option value="grid"' . ($viewType === 'grid' ? ' selected="selected"' : '') . '>' . $gridLabel . '</option>
+            <option value="list"' . ($viewType === 'list' ? ' selected="selected"' : '') . '>' . $listLabel . '</option>
+        </select>';
+        $ph['sv_view_block'] = '<div class="' . $blockClass . '">' . $ph['sv_view_select'] . '</div>';
+    }
 }
-// Prepara il selettore dell'ordinamento
-if ($sortOrderMode === 'buttons') {
-    $orderSelector = '<div class="'.$sortOrderBtnGroupClass.'">
-        <button type="submit" name="order" value="ASC" class="'.$sortOrderBtnClass.($sortOrder === 'ASC' ? ' '.$sortOrderBtnActiveClass : '').'">'
-            .$ascLabel.
-        '</button>
-        <button type="submit" name="order" value="DESC" class="'.$sortOrderBtnClass.($sortOrder === 'DESC' ? ' '.$sortOrderBtnActiveClass : '').'">'
-            .$descLabel.
-        '</button>
-    </div>';
-} else {
-    $orderSelector = '<select name="order" class="'.$sortOrderSelClass.'">
-        <option value="ASC"'.($sortOrder === 'ASC' ? ' selected="selected"' : '').'>'.htmlspecialchars($ASCLabel).'</option>
-        <option value="DESC"'.($sortOrder === 'DESC' ? ' selected="selected"' : '').'>'.htmlspecialchars($DESCLabel).'</option>
-    </select>';
+// Display block
+if ($showDisplay) {
+    $displayOptions = isset($param['displayOptions']) ? $param['displayOptions'] : '5||10||20||30||40||50';
+    $displayOptionsHtml = '';
+    foreach (explode('||', $displayOptions) as $option) {
+        $parts = explode('==', $option);
+        $value = $parts[0];
+        $label = isset($parts[1]) ? $parts[1] : $value;
+        $selected = $display === $value ? ' selected="selected"' : '';
+        $displayOptionsHtml.= '<option value="' . $value . '"' . $selected . '>' . $label . '</option>';
+    }
+    $ph['sv_display_select'] = '<select name="display" class="' . $selectClass . '">' . $displayOptionsHtml . '</select>';
+    $ph['sv_display_block'] = '<div class="' . $blockClass . '">' . $ph['sv_display_select'] . '</div>';
 }
-
-// Build form HTML
-$output = '<div class="sortview-container mb-4">
-    <form method="POST" action="'.$_SERVER['REQUEST_URI'].'" id="sortviewForm" class="form-inline justify-content-end">
-        <input type="hidden" name="action" value="sortview">
-        
-        <div class="'.$sortByOutClass.'">
-            <select name="sort" class="'.$sortBySelClass.'">'.$sortOptionsHtml.'</select>
+// Default template if none provided
+$defaultTemplate = '<div class="sortview-container mb-4">
+    [+sv_form_start+]
+        <div class="d-flex flex-wrap align-items-center justify-content-end">
+            [+sv_sortby_block+]
+            [+sv_sortorder_block+]
+            [+sv_view_block+]
+            [+sv_display_block+]
         </div>
-        
-        <div class="'.$sortOrderOutClass.'">'
-            .$orderSelector.
-        '</div>
-        
-        <div class="'.$viewOutClass.'">'.$viewSelector.'</div>
-        
-        <div class="'.$displayOutClass.'">
-            <select name="display" class="'.$displaySelClass.'">'.$displayOptionsHtml.'</select>
-        </div>
-    </form>
+    [+sv_form_end+]
 </div>';
-
-// Set placeholders
+// Parse template
+if (empty($template)) {
+    $output = $defaultTemplate;
+} else {
+    $output = parseLayoutTpl($template, $defaultTemplate);
+}
+foreach ($ph as $key => $value) {
+    $output = str_replace('[+' . $key . '+]', $value, $output);
+}
+// Set placeholders for eFilter/DocLister
 $modx->setPlaceholder('sv_sortBy', $sortBy);
 $modx->setPlaceholder('sv_sortOrder', $sortOrder);
 $modx->setPlaceholder('sv_tpl', $viewType === 'grid' ? $tplGrid : $tplList);
 $modx->setPlaceholder('sv_display', $display === 'all' ? '' : $display);
-
 // Register JavaScript
 $js = "
 jQuery(document).ready(function($) {
     var form = $('#sortviewForm');
     
+    // Handle select changes
     form.find('select').on('change', function() {
         form.submit();
     });
     
-    form.find('button[name=\"view\"]').on('click', function(e) {
+    // Handle buttons
+    form.find('button[name]').on('click', function(e) {
         e.preventDefault();
-        form.find('input[name=\"view\"]').remove();
-        form.append('<input type=\"hidden\" name=\"view\" value=\"' + $(this).val() + '\">');
+        var clickedName = $(this).attr('name');
+        var clickedValue = $(this).val();
+        
+        // Aggiorna o crea l'input hidden corrispondente
+        var hiddenInput = form.find('input[type=hidden][name=' + clickedName + ']');
+        if (hiddenInput.length) {
+            hiddenInput.val(clickedValue);
+        } else {
+            form.append('<input type=\"hidden\" name=\"' + clickedName + '\" value=\"' + clickedValue + '\">');
+        }
+        
         form.submit();
     });
 });";
-
-$modx->regClientScript("<script type=\"text/javascript\">".$js."</script>");
-
+$modx->regClientScript("<script type=\"text/javascript\">" . $js . "</script>");
 return $output;

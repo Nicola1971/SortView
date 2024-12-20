@@ -6,10 +6,10 @@
  *
  * @author    Nicola Lambathakis http://www.tattoocms.it/
  * @category    snippet
- * @version     2.0
+ * @version     2.1.1
  * @internal    @modx_category Content
  * @license     http://www.gnu.org/copyleft/gpl.html GNU Public License (GPL)
- * @lastupdate  19-12-2024
+ * @lastupdate  20-12-2024
  */
 if (!defined('MODX_BASE_PATH')) {
     die('What are you doing? Get out of here!');
@@ -57,12 +57,23 @@ $showSortBy = isset($param['showSortBy']) ? (bool)$param['showSortBy'] : true;
 $showSortOrder = isset($param['showSortOrder']) ? (bool)$param['showSortOrder'] : true;
 $showView = isset($param['showView']) ? (bool)$param['showView'] : true;
 $showDisplay = isset($param['showDisplay']) ? (bool)$param['showDisplay'] : true;
+$showReset = isset($param['showReset']) ? (bool)$param['showReset'] : false;
+
 // Labels
 $gridLabel = isset($param['gridLabel']) ? $param['gridLabel'] : 'Grid';
 $listLabel = isset($param['listLabel']) ? $param['listLabel'] : 'List';
 $DESCLabel = isset($param['DESCLabel']) ? $param['DESCLabel'] : 'Descending';
 $ASCLabel = isset($param['ASCLabel']) ? $param['ASCLabel'] : 'Ascending';
 $displayLabel = isset($param['displayLabel']) ? $param['displayLabel'] : 'Mostra:';
+$resetLabel = isset($param['resetLabel']) ? $param['resetLabel'] : 'Reset';
+
+// Titles attributes for buttons
+$gridTitle = isset($param['gridTitle']) ? $param['gridTitle'] : 'Grid';
+$listTitle = isset($param['listTitle']) ? $param['listTitle'] : 'List';
+$DESCTitle = isset($param['DESCTitle']) ? $param['DESCTitle'] : 'Descending';
+$ASCTitle = isset($param['ASCTitle']) ? $param['ASCTitle'] : 'Ascending';
+$resetTitle = isset($param['resetTitle']) ? $param['resetTitle'] : 'Reset all filters';
+
 // CSS Classes
 $formClass = isset($param['formClass']) ? $param['formClass'] : 'form-inline justify-content-end';
 $selectClass = isset($param['selectClass']) ? $param['selectClass'] : 'form-control form-control-sm';
@@ -70,13 +81,25 @@ $btnClass = isset($param['btnClass']) ? $param['btnClass'] : 'btn btn-outline-se
 $btnActiveClass = isset($param['btnActiveClass']) ? $param['btnActiveClass'] : 'active';
 $btnGroupClass = isset($param['btnGroupClass']) ? $param['btnGroupClass'] : 'btn-group';
 $blockClass = isset($param['blockClass']) ? $param['blockClass'] : 'form-group mr-2';
+$resetBtnClass = isset($param['resetBtnClass']) ? $param['resetBtnClass'] : $btnClass;
+
 // Process form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'sortview') {
-    $_SESSION['sortview_sort'] = isset($_POST['sort']) ? $_POST['sort'] : $defaultSort;
-    $_SESSION['sortview_order'] = isset($_POST['order']) ? $_POST['order'] : $defaultOrder;
-    $_SESSION['sortview_view'] = isset($_POST['view']) ? $_POST['view'] : $defaultView;
-    $_SESSION['sortview_display'] = isset($_POST['display']) ? $_POST['display'] : $defaultDisplay;
+    if (isset($_POST['reset'])) {
+        // Reset to defaults
+        $_SESSION['sortview_sort'] = $defaultSort;
+        $_SESSION['sortview_order'] = $defaultOrder;
+        $_SESSION['sortview_view'] = $defaultView;
+        $_SESSION['sortview_display'] = $defaultDisplay;
+    } else {
+        // Normal form processing
+        $_SESSION['sortview_sort'] = isset($_POST['sort']) ? $_POST['sort'] : $defaultSort;
+        $_SESSION['sortview_order'] = isset($_POST['order']) ? $_POST['order'] : $defaultOrder;
+        $_SESSION['sortview_view'] = isset($_POST['view']) ? $_POST['view'] : $defaultView;
+        $_SESSION['sortview_display'] = isset($_POST['display']) ? $_POST['display'] : $defaultDisplay;
+    }
 }
+
 // Get current values
 $sortBy = isset($_SESSION['sortview_sort']) ? $_SESSION['sortview_sort'] : $defaultSort;
 $sortOrder = isset($_SESSION['sortview_order']) ? $_SESSION['sortview_order'] : $defaultOrder;
@@ -111,8 +134,8 @@ if ($showSortBy) {
 // SortOrder block
 if ($showSortOrder) {
     if ($sortOrderMode === 'buttons') {
-        $ph['sv_btn_asc'] = '<button type="submit" name="order" value="ASC" class="' . $btnClass . ($sortOrder === 'ASC' ? ' ' . $btnActiveClass : '') . '">' . $ASCLabel . '</button>';
-        $ph['sv_btn_desc'] = '<button type="submit" name="order" value="DESC" class="' . $btnClass . ($sortOrder === 'DESC' ? ' ' . $btnActiveClass : '') . '">' . $DESCLabel . '</button>';
+        $ph['sv_btn_asc'] = '<button type="submit" name="order" value="ASC" title="' . $ASCTitle . '" class="' . $btnClass . ($sortOrder === 'ASC' ? ' ' . $btnActiveClass : '') . '">' . $ASCLabel . '</button>';
+        $ph['sv_btn_desc'] = '<button type="submit" name="order" value="DESC" title="' . $DESCTitle . '" class="' . $btnClass . ($sortOrder === 'DESC' ? ' ' . $btnActiveClass : '') . '">' . $DESCLabel . '</button>';
         $ph['sv_sortorder_block'] = '<div class="' . $blockClass . '"><div class="' . $btnGroupClass . '">' . $ph['sv_btn_asc'] . $ph['sv_btn_desc'] . '</div></div>';
     } else {
         $ph['sv_sortorder_select'] = '<select name="order" class="' . $selectClass . '">
@@ -125,8 +148,8 @@ if ($showSortOrder) {
 // View block
 if ($showView) {
     if ($viewMode === 'buttons') {
-        $ph['sv_btn_grid'] = '<button type="submit" name="view" value="grid" class="' . $btnClass . ($viewType === 'grid' ? ' ' . $btnActiveClass : '') . '">' . $gridLabel . '</button>';
-        $ph['sv_btn_list'] = '<button type="submit" name="view" value="list" class="' . $btnClass . ($viewType === 'list' ? ' ' . $btnActiveClass : '') . '">' . $listLabel . '</button>';
+        $ph['sv_btn_grid'] = '<button type="submit" name="view" value="grid" title="' . $gridTitle . '" class="' . $btnClass . ($viewType === 'grid' ? ' ' . $btnActiveClass : '') . '">' . $gridLabel . '</button>';
+        $ph['sv_btn_list'] = '<button type="submit" name="view" value="list" title="' . $listTitle . '" class="' . $btnClass . ($viewType === 'list' ? ' ' . $btnActiveClass : '') . '">' . $listLabel . '</button>';
         $ph['sv_view_block'] = '<div class="' . $blockClass . '"><div class="' . $btnGroupClass . '">' . $ph['sv_btn_grid'] . $ph['sv_btn_list'] . '</div></div>';
     } else {
         $ph['sv_view_select'] = '<select name="view" class="' . $selectClass . '">
@@ -150,6 +173,12 @@ if ($showDisplay) {
     $ph['sv_display_select'] = '<select name="display" class="' . $selectClass . '">' . $displayOptionsHtml . '</select>';
     $ph['sv_display_block'] = '<div class="' . $blockClass . '">' . $ph['sv_display_select'] . '</div>';
 }
+// Reset block
+if ($showReset) {
+    $ph['sv_btn_reset'] = '<button type="submit" name="reset" value="1" title="'.$resetTitle.'" class="'.$resetBtnClass.'">'.$resetLabel.'</button>';
+    $ph['sv_reset_block'] = '<div class="'.$blockClass.'">'.$ph['sv_btn_reset'].'</div>';
+}
+
 // Default template if none provided
 $defaultTemplate = '<div class="sortview-container mb-4">
     [+sv_form_start+]
@@ -158,6 +187,7 @@ $defaultTemplate = '<div class="sortview-container mb-4">
             [+sv_sortorder_block+]
             [+sv_view_block+]
             [+sv_display_block+]
+            [+sv_reset_block+]
         </div>
     [+sv_form_end+]
 </div>';

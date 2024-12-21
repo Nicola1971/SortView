@@ -1,4 +1,3 @@
-<?php
 /**
  * SortView
  *
@@ -6,10 +5,10 @@
  *
  * @author    Nicola Lambathakis http://www.tattoocms.it/
  * @category    snippet
- * @version     2.1.1
+ * @version     2.1.2
  * @internal    @modx_category Content
  * @license     http://www.gnu.org/copyleft/gpl.html GNU Public License (GPL)
- * @lastupdate  20-12-2024
+ * @lastupdate  21-12-2024
  */
 if (!defined('MODX_BASE_PATH')) {
     die('What are you doing? Get out of here!');
@@ -98,8 +97,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $_SESSION['sortview_view'] = isset($_POST['view']) ? $_POST['view'] : $defaultView;
         $_SESSION['sortview_display'] = isset($_POST['display']) ? $_POST['display'] : $defaultDisplay;
     }
+    
+    // Redirect to the current page without query string
+    header('Location: ' . $modx->makeUrl($modx->documentIdentifier));
+    exit;
 }
-
 // Get current values
 $sortBy = isset($_SESSION['sortview_sort']) ? $_SESSION['sortview_sort'] : $defaultSort;
 $sortOrder = isset($_SESSION['sortview_order']) ? $_SESSION['sortview_order'] : $defaultOrder;

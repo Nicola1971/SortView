@@ -1,3 +1,4 @@
+<?php
 /**
  * SortView
  *
@@ -29,8 +30,8 @@ function parseTpl($tpl, $default = '') {
     }
 }
 // Template delle view - passa solo il riferimento
-$tplGrid = isset($param['tplGrid']) ? parseTpl($param['tplGrid'], '@CODE:Missing Grid tpl!') : '@CODE:Missing Grid tpl!';
-$tplList = isset($param['tplList']) ? parseTpl($param['tplList'], '@CODE:Missing List tpl!') : '@CODE:Missing List tpl!';
+$tplGrid = isset($param['tplGrid']) ? parseTpl($param['tplGrid'], '') : '';
+$tplList = isset($param['tplList']) ? parseTpl($param['tplList'], '') : '';
 // Template generale - questo deve essere elaborato subito
 function parseLayoutTpl($tpl, $default = '') {
     if (empty($tpl)) return $default;
